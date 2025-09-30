@@ -1,0 +1,205 @@
+-- LocalScript (StarterPlayerScripts)
+-- Menu đơn giản: Play -> hiện GUI cho speed/jump/target highlight
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
+
+-- Tạo ScreenGui nếu chưa có
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "NguyenVanTienMenu"
+screenGui.ResetOnSpawn = false
+screenGui.Parent = PlayerGui
+
+-- Main frame
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0, 360, 0, 260)
+frame.Position = UDim2.new(0.5, -180, 0.5, -130)
+frame.AnchorPoint = Vector2.new(0.5, 0.5)
+frame.BackgroundColor3 = Color3.fromRGB(30,30,30)
+frame.BorderSizePixel = 0
+frame.Visible = false
+frame.Parent = screenGui
+
+local uiCorner = Instance.new("UICorner", frame)
+uiCorner.CornerRadius = UDim.new(0,8)
+
+local title = Instance.new("TextLabel", frame)
+title.Size = UDim2.new(1, -16, 0, 36)
+title.Position = UDim2.new(0,8,0,8)
+title.BackgroundTransparency = 1
+title.Text = "Menu Script Nguyễn Văn Tiến"
+title.TextColor3 = Color3.fromRGB(240,240,240)
+title.Font = Enum.Font.SourceSansBold
+title.TextSize = 18
+title.TextXAlignment = Enum.TextXAlignment.Left
+
+local function makeLabel(y, txt)
+    local lbl = Instance.new("TextLabel", frame)
+    lbl.Position = UDim2.new(0,16,0,y)
+    lbl.Size = UDim2.new(0,160,0,30)
+    lbl.BackgroundTransparency = 1
+    lbl.Text = txt
+    lbl.TextColor3 = Color3.fromRGB(220,220,220)
+    lbl.Font = Enum.Font.SourceSans
+    lbl.TextSize = 14
+    lbl.TextXAlignment = Enum.TextXAlignment.Left
+    return lbl
+end
+
+local function makeTextbox(y, placeholder)
+    local box = Instance.new("TextBox", frame)
+    box.Position = UDim2.new(0,180,0,y)
+    box.Size = UDim2.new(0,160,0,30)
+    box.Text = ""
+    box.PlaceholderText = placeholder
+    box.ClearTextOnFocus = false
+    box.Font = Enum.Font.SourceSans
+    box.TextSize = 14
+    box.TextColor3 = Color3.fromRGB(0,0,0)
+    local bg = Instance.new("UICorner", box)
+    bg.CornerRadius = UDim.new(0,6)
+    return box
+end
+
+-- Speed
+makeLabel(56, "chạy : hãy nhập số mà bạn muốn chạy nhanh")
+local speedBox = makeTextbox(56, "WalkSpeed (ví dụ 16 mặc định)")
+
+-- Hitbox (CHỈ HIỂN THỊ - mình không cung cấp code thay đổi hitbox để gian lận)
+makeLabel(96, "hitbox : (không hỗ trợ thay đổi hitbox để tránh gian lận)")
+local hitboxInfo = Instance.new("TextLabel", frame)
+hitboxInfo.Position = UDim2.new(0,180,0,96)
+hitboxInfo.Size = UDim2.new(0,160,0,30)
+hitboxInfo.BackgroundTransparency = 1
+hitboxInfo.Text = "Không khả dụng (an toàn)"
+hitboxInfo.TextColor3 = Color3.fromRGB(200,100,100)
+hitboxInfo.Font = Enum.Font.SourceSansItalic
+hitboxInfo.TextSize = 12
+
+-- Jump
+makeLabel(136, "nhảy : hãy nhập số để nhảy cao")
+local jumpBox = makeTextbox(136, "JumpPower (ví dụ 50)")
+
+-- Aim / Target highlight (AN TOÀN: chỉ highlight, không auto-aim)
+makeLabel(176, "aim : hãy nhập tên người chơi để highlight")
+local targetBox = makeTextbox(176, "Tên người chơi (chính xác)")
+
+-- Buttons
+local applyBtn = Instance.new("TextButton", frame)
+applyBtn.Position = UDim2.new(0,32,0,216)
+applyBtn.Size = UDim2.new(0,120,0,32)
+applyBtn.Text = "Áp dụng"
+applyBtn.Font = Enum.Font.SourceSansBold
+applyBtn.TextSize = 14
+applyBtn.BackgroundColor3 = Color3.fromRGB(70,130,180)
+applyBtn.TextColor3 = Color3.new(1,1,1)
+Instance.new("UICorner", applyBtn).CornerRadius = UDim.new(0,6)
+
+local closeBtn = Instance.new("TextButton", frame)
+closeBtn.Position = UDim2.new(0,200,0,216)
+closeBtn.Size = UDim2.new(0,120,0,32)
+closeBtn.Text = "Đóng"
+closeBtn.Font = Enum.Font.SourceSansBold
+closeBtn.TextSize = 14
+closeBtn.BackgroundColor3 = Color3.fromRGB(100,100,100)
+closeBtn.TextColor3 = Color3.new(1,1,1)
+Instance.new("UICorner", closeBtn).CornerRadius = UDim.new(0,6)
+
+-- Play button (kèm GUI nhỏ ở góc để mở menu)
+local playGui = Instance.new("ScreenGui", PlayerGui)
+playGui.Name = "PlayButtonGui"
+local playBtn = Instance.new("TextButton", playGui)
+playBtn.Size = UDim2.new(0,100,0,40)
+playBtn.Position = UDim2.new(0,10,0,10)
+playBtn.Text = "Play"
+playBtn.Font = Enum.Font.SourceSansBold
+playBtn.TextSize = 16
+playBtn.BackgroundColor3 = Color3.fromRGB(35,150,80)
+playBtn.TextColor3 = Color3.new(1,1,1)
+Instance.new("UICorner", playBtn).CornerRadius = UDim.new(0,8)
+
+playBtn.MouseButton1Click:Connect(function()
+    frame.Visible = true
+end)
+
+closeBtn.MouseButton1Click:Connect(function()
+    frame.Visible = false
+end)
+
+-- Highlight helper
+local currentHighlight = nil
+local function clearHighlight()
+    if currentHighlight and currentHighlight.Parent then
+        currentHighlight:Destroy()
+    end
+    currentHighlight = nil
+end
+
+local function highlightPlayer(targetPlayer)
+    clearHighlight()
+    if not targetPlayer or not targetPlayer.Character then return end
+    local char = targetPlayer.Character
+    local hrp = char:FindFirstChild("HumanoidRootPart") or char:FindFirstChildWhichIsA("BasePart")
+    if not hrp then return end
+
+    -- Tạo SelectionBox gắn lên head (an toàn, client-side)
+    local sel = Instance.new("SelectionBox")
+    sel.Adornee = hrp
+    sel.Parent = workspace
+    sel.LineThickness = 0.03
+    currentHighlight = sel
+
+    -- tự động clear sau 8 giây
+    delay(8, clearHighlight)
+end
+
+-- Áp dụng cấu hình
+applyBtn.MouseButton1Click:Connect(function()
+    -- Speed
+    local speedNum = tonumber(speedBox.Text)
+    if speedNum and LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
+        LocalPlayer.Character:FindFirstChildOfClass("Humanoid").WalkSpeed = speedNum
+    end
+
+    -- JumpPower
+    local jumpNum = tonumber(jumpBox.Text)
+    if jumpNum and LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
+        LocalPlayer.Character:FindFirstChildOfClass("Humanoid").JumpPower = jumpNum
+    end
+
+    -- Target highlight (AN TOÀN: chỉ highlight)
+    local targetName = targetBox.Text
+    if targetName and targetName ~= "" then
+        local targetPlayer = Players:FindFirstChild(targetName)
+        if targetPlayer then
+            highlightPlayer(targetPlayer)
+        else
+            -- Thông báo nhỏ
+            local old = applyBtn.Text
+            applyBtn.Text = "Không tìm thấy người chơi"
+            wait(1.6)
+            applyBtn.Text = old
+        end
+    end
+end)
+
+-- Reset khi respawn
+LocalPlayer.CharacterAdded:Connect(function(char)
+    wait(0.5)
+    -- reset WalkSpeed & JumpPower sang mặc định (nếu muốn)
+    local hum = char:WaitForChild("Humanoid", 2)
+    if hum then
+        hum.WalkSpeed = 16
+        hum.JumpPower = 50
+    end
+end)
+
+-- Lưu ý an toàn
+local info = Instance.new("TextLabel", frame)
+info.Position = UDim2.new(0,12,0,48)
+info.Size = UDim2.new(1,-24,0,12)
+info.BackgroundTransparency = 1
+info.Text = "Chỉ dùng trong Roblox Studio để học. Không dùng để gian lận."
+info.Font = Enum.Font.SourceSansItalic
+info.TextSize = 10
+info.TextColor3 = Color3.fromRGB(200,200,200)
